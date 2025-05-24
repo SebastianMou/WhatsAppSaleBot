@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Business Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .contact-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .contact-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .online-indicator {
+            width: 12px;
+            height: 12px;
+            background-color: #28a745;
+            border-radius: 50%;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .message-preview {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .unread-badge {
+            background-color: #25d366;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            color: white;
+        }
+        .sidebar {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 sidebar p-4">
+                <div class="d-flex align-items-center mb-4">
+                    <i class="fab fa-whatsapp text-success fs-2 me-2"></i>
+                    <h4 class="mb-0">Business Chat</h4>
+                </div>
+                
+                <!-- Search Bar -->
+                <div class="mb-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" placeholder="Search contacts..." id="contactSearch">
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card stats-card border-0">
+                            <div class="card-body text-center">
+                                <h5><i class="fas fa-users me-2"></i>{{ contacts.count }} Contacts</h5>
+                                <small>Active conversations</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contacts List -->
+                <div class="contacts-list">
+                    <h6 class="text-muted mb-3">Recent Chats</h6>
+                    {% for contact in contacts %}
+                    <div class="contact-card card mb-2 border-0 shadow-sm" onclick="openChat({{ contact.id }})">
+                        <div class="card-body p-3 position-relative">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar me-3">
+                                    <div class="bg-success rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <i class="fas fa-user text-white"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ contact.name|default:contact.phone_number }}</h6>
+                                    <p class="message-preview mb-0">
+                                        {% if contact.messages.last %}
+                                            {{ contact.messages.last.content|truncatechars:30 }}
+                                        {% else %}
+                                            No messages yet
+                                        {% endif %}
+                                    </p>
+                                    <small class="text-muted">{{ contact.last_interaction|timesince }} ago</small>
+                                </div>
+                                {% if contact.messages.count > 0 %}
+                                <span class="badge unread-badge">{{ contact.messages.count }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-comments fa-3x mb-3 text-muted"></i>
+                        <p>No contacts yet. Start a conversation!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 p-4">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2>Dashboard Overview</h2>
+                        <p class="text-muted">Manage your WhatsApp Business conversations</p>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline-primary">
+                            <i class="fas fa-cog me-2"></i>Settings
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Stats Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <i class="fas fa-comments text-primary fa-2x mb-2"></i>
+                                <h4>0</h4>
+                                <p class="text-muted mb-0">Messages Today</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <i class="fas fa-user-friends text-info fa-2x mb-2"></i>
+                                <h4>{{ contacts.count }}</h4>
+                                <p class="text-muted mb-0">Total Contacts</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <i class="fas fa-clock text-warning fa-2x mb-2"></i>
+                                <h4>0</h4>
+                                <p class="text-muted mb-0">Pending Replies</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <i class="fas fa-robot text-success fa-2x mb-2"></i>
+                                <h4>AI</h4>
+                                <p class="text-muted mb-0">Assistant Ready</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if contacts %}
+                        <div class="list-group list-group-flush">
+                            {% for contact in contacts|slice:":5" %}
+                            <div class="list-group-item border-0 px-0">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar me-3">
+                                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-user text-white"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ contact.name|default:contact.phone_number }}</h6>
+                                        <p class="text-muted mb-0">Last interaction: {{ contact.last_interaction|timesince }} ago</p>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="openChat({{ contact.id }})">
+                                        <i class="fas fa-comment"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>No recent activity. Your conversations will appear here.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function openChat(contactId) {
+            window.location.href = `/chat/${contactId}/`;
+        }
+
+        // Search functionality
+        document.getElementById('contactSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const contactCards = document.querySelectorAll('.contact-card');
+            
+            contactCards.forEach(card => {
+                const contactName = card.querySelector('h6').textContent.toLowerCase();
+                if (contactName.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

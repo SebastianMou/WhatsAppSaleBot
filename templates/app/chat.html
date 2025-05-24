@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with {{ contact.name|default:contact.phone_number }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .chat-container {
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 0;
+        }
+        
+        .chat-messages {
+            height: calc(100vh - 200px);
+            overflow-y: auto;
+            padding: 1rem;
+            background-color: #f0f0f5;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="chat-bg" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23chat-bg)"/></svg>');
+        }
+        
+        .message {
+            margin-bottom: 1rem;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message-incoming {
+            display: flex;
+            justify-content: flex-start;
+        }
+        
+        .message-outgoing {
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .message-bubble {
+            max-width: 70%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            position: relative;
+            word-wrap: break-word;
+        }
+        
+        .message-incoming .message-bubble {
+            background-color: white;
+            border-bottom-left-radius: 0.25rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .message-outgoing .message-bubble {
+            background-color: #dcf8c6;
+            border-bottom-right-radius: 0.25rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .message-time {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+        
+        .message-status {
+            color: #4fc3f7;
+            margin-left: 0.5rem;
+        }
+        
+        .chat-input {
+            background-color: white;
+            border-top: 1px solid #e0e0e0;
+            padding: 1rem;
+        }
+        
+        /* .ai-response-section {
+            background-color: #e8f5e8;
+            border: 1px solid #c3e6c3;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: none;
+        } */
+        
+        .ai-response-text {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            min-height: 80px;
+            font-family: inherit;
+        }
+        
+        .ai-button {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            border: none;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .ai-button:hover {
+            background: linear-gradient(135deg, #ee5a24 0%, #ff6b6b 100%);
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .ai-button:disabled {
+            background: #ccc;
+            transform: none;
+        }
+        
+        .contact-info {
+            background-color: rgba(255,255,255,0.1);
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 0.5rem 1rem;
+            background-color: white;
+            border-radius: 1rem;
+            max-width: 100px;
+            margin-bottom: 1rem;
+        }
+        
+        .typing-dots {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #999;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid chat-container">
+        <!-- Chat Header -->
+        <div class="chat-header d-flex align-items-center">
+            <button class="btn btn-link text-white me-3 p-0" onclick="goBack()">
+                <i class="fas fa-arrow-left fa-lg"></i>
+            </button>
+            
+            <div class="avatar me-3">
+                <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                    <i class="fas fa-user text-white"></i>
+                </div>
+            </div>
+            
+            <div class="contact-info flex-grow-1">
+                <h5 class="mb-0">{{ contact.name|default:contact.phone_number }}</h5>
+                <small class="text-white-50">{{ contact.phone_number }}</small>
+            </div>
+
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chatMessages">
+            {% for message in messages %}
+            <div class="message {% if message.is_incoming %}message-incoming{% else %}message-outgoing{% endif %}">
+                <div class="message-bubble">
+                    <div class="message-content">{{ message.content }}</div>
+                    <div class="message-time">
+                        {{ message.timestamp|date:"H:i" }}
+                        {% if not message.is_incoming %}
+                        <span class="message-status">
+                            <i class="fas fa-check-double"></i>
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-comments fa-3x mb-3"></i>
+                <p>No messages yet. Start the conversation!</p>
+            </div>
+            {% endfor %}
+            
+            <!-- Typing Indicator -->
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Response Modal -->
+        <div class="modal fade" id="aiResponseModal" tabindex="-1" aria-labelledby="aiResponseModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="aiResponseModalLabel">
+                    <i class="fas fa-robot text-success me-2"></i>AI Generated Response
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <textarea class="form-control" id="aiResponseText" rows="4"
+                            placeholder="AI response will appear here..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-success" onclick="useAIResponse()">
+                    <i class="fas fa-check me-1"></i>Use This Response
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="editAIResponse()">
+                    <i class="fas fa-edit me-1"></i>Edit & Use
+                    </button>
+                </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <!-- Chat Input -->
+            <div class="input-group">
+                <button class="btn btn-outline-secondary" type="button">
+                    <i class="fas fa-paperclip"></i>
+                </button>
+                <input type="text" class="form-control" id="messageInput" placeholder="Type a message..." 
+                       onkeypress="handleKeyPress(event)">
+                <button class="btn btn-outline-secondary" type="button" onclick="toggleEmoji()">
+                    <i class="fas fa-smile"></i>
+                </button>
+                <button class="btn btn-success" type="button" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+
+                <button class="btn ai-button" onclick="generateAIResponse()" id="aiButton">
+                    <i class="fas fa-robot me-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const contactId = {{ contact.id }};
+        let lastMessageId = 0;
+        
+        function goBack() {
+            window.location.href = '/';
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const content = messageInput.value.trim();
+            
+            if (!content) return;
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Add message to UI immediately
+            addMessageToUI(content, false);
+            messageInput.value = '';
+            
+            // Send message to backend
+            fetch('/send-message/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    contact_id: contactId,
+                    content: content
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideTypingIndicator();
+                if (data.status === 'success') {
+                    console.log('Message sent successfully');
+                } else {
+                    console.error('Failed to send message:', data.message);
+                }
+            })
+            .catch(error => {
+                hideTypingIndicator();
+                console.error('Error:', error);
+            });
+            
+            scrollToBottom();
+        }
+        
+        function addMessageToUI(content, isIncoming) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            const now = new Date();
+            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                              now.getMinutes().toString().padStart(2, '0');
+            
+            messageDiv.className = `message ${isIncoming ? 'message-incoming' : 'message-outgoing'}`;
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    <div class="message-content">${content}</div>
+                    <div class="message-time">
+                        ${timeString}
+                        ${!isIncoming ? '<span class="message-status"><i class="fas fa-check-double"></i></span>' : ''}
+                    </div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+        
+        function showTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'block';
+            scrollToBottom();
+        }
+        
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+        
+        function scrollToBottom() {
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // AI Response Functions
+        function generateAIResponse() {
+            const aiButton = document.getElementById('aiButton');
+            const aiSection = document.getElementById('aiResponseSection');
+            const aiTextArea = document.getElementById('aiResponseText');
+            
+            // Show loading state
+            aiButton.disabled = true;
+            aiButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating...';
+            
+            // Show AI section
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('aiResponseModal'));
+            modal.show();
+            aiTextArea.value = 'Analyzing conversation and generating response...';
+            
+            // Call real Gemini AI API
+            fetch(`/api/contacts/${contactId}/generate-ai-response/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Display the AI response
+                    aiTextArea.value = data.ai_response;
+                    
+                    // Add some visual feedback
+                    aiTextArea.classList.add('pulse');
+                    setTimeout(() => aiTextArea.classList.remove('pulse'), 1500);
+                    
+                    console.log(`AI analyzed ${data.conversation_length} messages`);
+                } else {
+                    aiTextArea.value = 'Sorry, I had trouble generating a response. Please try again.';
+                    console.error('AI Error:', data.error);
+                }
+                
+                // Reset button
+                aiButton.disabled = false;
+                aiButton.innerHTML = '<i class="fas fa-robot me-1"></i>AI';
+            })
+            .catch(error => {
+                console.error('Error calling AI API:', error);
+                aiTextArea.value = 'Sorry, there was an error connecting to the AI service. Please try again.';
+                
+                // Reset button
+                aiButton.disabled = false;
+                aiButton.innerHTML = '<i class="fas fa-robot me-1"></i>AI';
+            });
+        }
+        
+        function useAIResponse() {
+            const aiText = document.getElementById('aiResponseText').value;
+            if (aiText && aiText !== 'Generating AI response...') {
+                document.getElementById('messageInput').value = aiText;
+                closeAIResponse();
+                // Focus on the input for easy sending
+                document.getElementById('messageInput').focus();
+            }
+        }
+        
+        function editAIResponse() {
+            const aiTextArea = document.getElementById('aiResponseText');
+            aiTextArea.focus();
+            aiTextArea.select();
+        }
+        
+        function closeAIResponse() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('aiResponseModal'));
+            modal.hide();
+            document.getElementById('aiResponseText').value = '';
+        }
+        
+        // Real-time message checking
+        function checkForNewMessages() {
+            fetch(`/api/contacts/${contactId}/messages/`)
+                .then(response => response.json())
+                .then(messages => {
+                    const currentMessages = document.querySelectorAll('.message').length;
+                    if (messages.length > currentMessages) {
+                        // New message received, add it to UI
+                        const newMessages = messages.slice(currentMessages);
+                        newMessages.forEach(message => {
+                            if (message.is_incoming) {
+                                addMessageToUI(message.content, true);
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.log('Error checking for new messages:', error);
+                });
+        }
+        
+        function toggleEmoji() {
+            // Emoji picker functionality would go here
+            alert('Emoji picker coming soon!');
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Auto-scroll to bottom on page load
+        window.onload = function() {
+            scrollToBottom();
+        };
+        
+        // Check for new messages every 3 seconds
+        setInterval(checkForNewMessages, 3000);
+        
+        // Close AI response when clicking outside
+        document.addEventListener('click', function(event) {
+            const aiSection = document.getElementById('aiResponseSection');
+            const aiButton = document.getElementById('aiButton');
+            
+            if (aiSection.style.display === 'block' && 
+                !aiSection.contains(event.target) && 
+                !aiButton.contains(event.target)) {
+                // Don't auto-close, let user decide
+            }
+        });
+    </script>
+</body>
+</html>

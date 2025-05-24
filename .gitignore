@@ -1,0 +1,8 @@
+# Ignore virtual environment
+env/
+
+# Ignore environment variables file
+.env
+
+db.sqlite3
+__pycache__
