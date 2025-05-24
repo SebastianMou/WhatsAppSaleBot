@@ -2,13 +2,15 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from app.models import WhatsAppContact, WhatsAppMessage
+from app.models import WhatsAppContact, WhatsAppMessage, ClientData
 from .serializers import (
     WhatsAppContactSerializer, 
     WhatsAppMessageSerializer,
     SendMessageSerializer,
-    WebhookMessageSerializer
+    WebhookMessageSerializer,
+    ClientDataSerializer  # ADD THIS
 )
+
 from app.ai_service import WhatsAppAIService
 import json
 import logging
@@ -231,3 +233,17 @@ def generate_multiple_ai_responses(request, contact_id=None):
             'success': False,
             'error': f'Internal server error: {str(e)}'
         }, status=500)
+    
+@api_view(['GET', 'POST'])
+def client_data_list(request):
+    if request.method == 'GET':
+        client_data = ClientData.objects.all()
+        serializer = ClientDataSerializer(client_data, many=True)
+        return Response(serializer.data)
+    
+    elif request.method == 'POST':
+        serializer = ClientDataSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

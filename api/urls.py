@@ -20,4 +20,7 @@ urlpatterns = [
     
     # AI endpoints - POST body version (ADD THIS LINE)
     path('generate-ai-response/', views.generate_ai_response, name='generate-ai-response'),
+
+    path('client-data/', views.client_data_list, name='client-data-list'),
+
 ]
