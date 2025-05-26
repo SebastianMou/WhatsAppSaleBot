@@ -53,7 +53,7 @@ class ClientDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientData
         fields = ['id', 'contact', 'contact_phone', 'contact_name', 'fullname', 
-                 'email', 'curp', 'rfc', 'address', 'referral_phone_number', 'created_at']
+                 'email', 'curp', 'rfc', 'address', 'phone_number', 'referral_phone_number', 'created_at']  # ADD phone_number
         read_only_fields = ['created_at']
     
     def validate_curp(self, value):

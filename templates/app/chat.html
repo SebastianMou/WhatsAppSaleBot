@@ -337,6 +337,10 @@
                                 <textarea class="form-control" id="address" rows="3" required></textarea>
                             </div>
                             <div class="mb-3">
+                                <label class="form-label">Phone Number</label>
+                                <input type="text" class="form-control" id="phone" required>
+                            </div>
+                            <div class="mb-3">
                                 <label class="form-label">Referral Phone (Optional)</label>
                                 <input type="text" class="form-control" id="referral_phone">
                             </div>
@@ -582,8 +586,8 @@
             }
         });
 
-        // Handle client data form submission
-        // Replace the existing form submission handler with this:
+        let currentClientDataId = null;
+
         document.getElementById('clientDataForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -594,11 +598,16 @@
                 curp: document.getElementById('curp').value.toUpperCase(),
                 rfc: document.getElementById('rfc').value.toUpperCase(),
                 address: document.getElementById('address').value,
+                phone_number: document.getElementById('phone').value,
                 referral_phone_number: document.getElementById('referral_phone').value
             };
+
+            const isUpdate = currentClientDataId !== null;
+            const url = isUpdate ? `/api/client-data/${currentClientDataId}/` : '/api/client-data/';
+            const method = isUpdate ? 'PUT' : 'POST';
             
-            fetch('/api/client-data/', {
-                method: 'POST',
+            fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCookie('csrftoken')
@@ -608,9 +617,10 @@
             .then(response => response.json())
             .then(data => {
                 if (data.id) {
-                    alert('Client data saved successfully!');
-                    displayClientInfo(data); // Show formatted info
-                    // Keep form populated (don't reset)
+                    alert(isUpdate ? 'Client data updated successfully!' : 'Client data saved successfully!');
+                    currentClientDataId = data.id; // Store the ID for future updates
+                    displayClientInfo(data);
+                    document.querySelector('button[type="submit"]').textContent = 'Update Client Data';
                 } else {
                     alert('Error saving data: ' + JSON.stringify(data));
                 }
@@ -641,12 +651,13 @@
         function displayClientInfo(data) {
             const infoHtml = `
                 <div class="alert alert-info">
-                    <strong>TT: ${data.fullname.toUpperCase()}</strong><br>
+                    <strong>TT:</strong> ${data.fullname.toUpperCase()}<br>
                     <strong>RFC:</strong> ${data.rfc.toUpperCase()}<br>
                     <strong>TELÉFONOS:</strong><br>
-                    ${data.contact_phone}<br>
-                    ${data.referral_phone_number ? data.referral_phone_number + '<br>' : ''}
-                    <strong>${data.email.toUpperCase()}</strong>
+                    ${data.phone_number || 'No registrado'}<br>
+                    ${data.referral_phone_number || 'No registrado'}<br>
+                    <strong>CORREO:</strong><br>
+                    ${data.email.toUpperCase()}
                 </div>
             `;
             
@@ -665,13 +676,19 @@
 
         // Populate form with existing data
         function populateForm(data) {
+            currentClientDataId = data.id; // Store the ID
             document.getElementById('fullname').value = data.fullname;
             document.getElementById('email').value = data.email;
             document.getElementById('curp').value = data.curp;
             document.getElementById('rfc').value = data.rfc;
             document.getElementById('address').value = data.address;
+            document.getElementById('phone').value = data.phone_number || '';
             document.getElementById('referral_phone').value = data.referral_phone_number || '';
+            
+            // Change button text to indicate update mode
+            document.querySelector('button[type="submit"]').textContent = 'Update Client Data';
         }
+
     </script>
 </body>
 

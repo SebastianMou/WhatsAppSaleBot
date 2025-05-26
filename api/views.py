@@ -247,3 +247,22 @@ def client_data_list(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+def client_data_detail(request, pk):
+    client_data = get_object_or_404(ClientData, pk=pk)
+    
+    if request.method == 'GET':
+        serializer = ClientDataSerializer(client_data)
+        return Response(serializer.data)
+    
+    elif request.method == 'PUT':
+        serializer = ClientDataSerializer(client_data, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'DELETE':
+        client_data.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -27,6 +27,7 @@ class ClientData(models.Model):
     curp = models.CharField(max_length=18, unique=True) 
     rfc = models.CharField(max_length=13, unique=True)  
     address = models.TextField() 
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
     referral_phone_number = models.CharField(max_length=20, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

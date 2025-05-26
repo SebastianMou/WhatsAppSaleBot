@@ -25,12 +25,12 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = [
     '127.0.0.1', 
     'localhost', 
-    '3f8d-2806-250-d15-4204-a459-52a2-89a1-b5b5.ngrok-free.app',
+    'c641-2806-105e-2a-b45-6c76-22d2-fe46-c29.ngrok-free.app',
 ]
 
 # In settings.py
 CSRF_TRUSTED_ORIGINS = [
-    'https://3f8d-2806-250-d15-4204-a459-52a2-89a1-b5b5.ngrok-free.app',
+    'https://c641-2806-105e-2a-b45-6c76-22d2-fe46-c29.ngrok-free.app',
 ]
 
 # Application definition

@@ -22,5 +22,5 @@ urlpatterns = [
     path('generate-ai-response/', views.generate_ai_response, name='generate-ai-response'),
 
     path('client-data/', views.client_data_list, name='client-data-list'),
-
+    path('client-data/<int:pk>/', views.client_data_detail, name='client-data-detail'),
 ]
