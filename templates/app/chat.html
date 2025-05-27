@@ -198,6 +198,80 @@
                 transform: scale(1);
             }
         }
+
+        .copy-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .copy-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-color: #3b82f6;
+        }
+        
+        .copy-card:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .copy-feedback {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .copy-feedback.show {
+            transform: translateX(0);
+        }
+        
+        .grid {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .grid-cols-1 {
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+        
+        @media (min-width: 768px) {
+            .md\\:grid-cols-2 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        
+        .text-gray-800 {
+            color: #1f2937;
+        }
+        
+        .text-gray-700 {
+            color: #374151;
+        }
+        
+        .font-medium {
+            font-weight: 500;
+        }
+        
+        .list-disc {
+            list-style-type: disc;
+        }
+        
+        .list-inside {
+            list-style-position: inside;
+        }
     </style>
 </head>
 
@@ -294,15 +368,13 @@
                         <button class="btn btn-outline-secondary" type="button">
                             <i class="fas fa-paperclip"></i>
                         </button>
-                        <input type="text" class="form-control" id="messageInput" placeholder="Type a message..."
-                            onkeypress="handleKeyPress(event)">
-                        <button class="btn btn-outline-secondary" type="button" onclick="toggleEmoji()">
-                            <i class="fas fa-smile"></i>
+                        <input type="text" class="form-control" id="messageInput" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#copyModal">
+                            <i class="fas fa-clipboard"></i>
                         </button>
                         <button class="btn btn-success" type="button" onclick="sendMessage()">
                             <i class="fas fa-paper-plane"></i>
                         </button>
-
                         <button class="btn ai-button" onclick="generateAIResponse()" id="aiButton">
                             <i class="fas fa-robot me-1"></i>
                         </button>
@@ -352,6 +424,55 @@
 
         </div>
 
+    </div>
+
+
+    <div class="modal fade" id="copyModal" tabindex="-1" aria-labelledby="copyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="copyModalLabel">Mensajes Rápidos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2">
+                        <div class="copy-card" data-text="¿Actualmente cuenta con una compañía o servicio de internet?">
+                            <p class="text-gray-800 font-medium">¿Actualmente cuenta con una compañía o servicio de internet?</p>
+                        </div>
+                        <div class="copy-card" data-text="¡Perfecto! Pero primero necesito que compartas tu ubicación usando el mapa de WhatsApp para poder verificar la cobertura en tu zona. Solo presiona el clip (📎), selecciona &quot;Ubicación&quot; y envíame tu ubicación actual. 📍">
+                            <p class="text-gray-800 font-medium">¡Perfecto! Pero primero necesito que compartas tu ubicación usando el mapa de WhatsApp para poder verificar la cobertura en tu zona. Solo presiona el clip (📎), selecciona "Ubicación" y envíame tu ubicación actual. 📍</p>
+                        </div>
+                        <div class="copy-card" data-text="Gracias por la espera, por el momento no contamos con cobertura en tu zona pero estaremos ahí lo más pronto posible">
+                            <p class="text-gray-800 font-medium">Gracias por la espera, por el momento no contamos con cobertura en tu zona pero estaremos ahí lo más pronto posible</p>
+                        </div>
+                        <div class="copy-card" data-text="¿Sigue conmigo?">
+                            <p class="text-gray-800 font-medium">¿Sigue conmigo?</p>
+                        </div>
+                        <div class="copy-card" data-text="Perfecto, Dame un minuto para confirmar si tenemos cobertura">
+                            <p class="text-gray-800 font-medium">Perfecto, Dame un minuto para confirmar si tenemos cobertura</p>
+                        </div>
+                        <div class="copy-card" data-text="Para continuar con tu solicitud, necesito los siguientes datos:&#10;👤 Nombre completo del titular&#10;🏠 Comprobante de domicilio donde se va a hacer la instalación&#10;🪪 INE del titular&#10;📱 Teléfono del titular&#10;📞 Teléfono del referido&#10;📧 Correo electrónico">
+                            <p class="text-gray-800 font-medium">Para continuar con tu solicitud, necesito los siguientes datos:</p>
+                            <ul class="list-disc list-inside text-gray-700 mt-2">
+                                <li>👤 Nombre completo del titular</li>
+                                <li>🏠 Comprobante de domicilio donde se va a hacer la instalación</li>
+                                <li>🪪 INE del titular</li>
+                                <li>📱 Teléfono del titular</li>
+                                <li>📞 Teléfono del referido</li>
+                                <li>📧 Correo electrónico</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="copyFeedback" class="copy-feedback">
+        ¡Copiado al portapapeles!
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -545,11 +666,6 @@
                 });
         }
 
-        function toggleEmoji() {
-            // Emoji picker functionality would go here
-            alert('Emoji picker coming soon!');
-        }
-
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
@@ -689,6 +805,62 @@
             document.querySelector('button[type="submit"]').textContent = 'Update Client Data';
         }
 
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const copyCards = document.querySelectorAll('.copy-card');
+            const copyFeedback = document.getElementById('copyFeedback');
+
+            copyCards.forEach(card => {
+                card.addEventListener('click', async function() {
+                    const textToCopy = this.getAttribute('data-text');
+                    
+                    try {
+                        // Try modern Clipboard API first
+                        if (navigator.clipboard && window.isSecureContext) {
+                            await navigator.clipboard.writeText(textToCopy);
+                            showFeedback();
+                        } else {
+                            // Fallback for older browsers or non-HTTPS
+                            const textarea = document.createElement('textarea');
+                            textarea.value = textToCopy;
+                            textarea.style.position = 'fixed';
+                            textarea.style.left = '-9999px';
+                            textarea.style.top = '-9999px';
+                            document.body.appendChild(textarea);
+                            textarea.focus();
+                            textarea.select();
+                            
+                            const successful = document.execCommand('copy');
+                            document.body.removeChild(textarea);
+                            
+                            if (successful) {
+                                showFeedback();
+                            } else {
+                                throw new Error('Copy command failed');
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Failed to copy text: ', err);
+                        // Show error feedback
+                        copyFeedback.textContent = 'Error al copiar';
+                        copyFeedback.style.background = '#ef4444';
+                        copyFeedback.classList.add('show');
+                        setTimeout(() => {
+                            copyFeedback.classList.remove('show');
+                            copyFeedback.textContent = '¡Copiado al portapapeles!';
+                            copyFeedback.style.background = '#10b981';
+                        }, 2000);
+                    }
+                });
+            });
+
+            function showFeedback() {
+                copyFeedback.classList.add('show');
+                setTimeout(() => {
+                    copyFeedback.classList.remove('show');
+                }, 1500);
+            }
+        });
     </script>
 </body>
 

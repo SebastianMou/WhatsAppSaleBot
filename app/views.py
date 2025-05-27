@@ -10,6 +10,20 @@ import json
 import requests
 from .models import WhatsAppContact, WhatsAppMessage
 
+def process_message_content(data):
+    """Process different types of WhatsApp messages"""
+    print(f"Processing message data: {data}")  # Add this debug line
+    
+    # Handle location messages
+    if data.get('type') == 'location' or (data.get('latitude') and data.get('longitude')):
+        lat = data.get('latitude')
+        lng = data.get('longitude')
+        print(f"Location detected: lat={lat}, lng={lng}")  # Add this debug line
+        return f"📍 Ubicación compartida: https://www.google.com/maps?q={lat},{lng}"
+    
+    # Handle regular text messages
+    return data.get('content', data.get('text', '[Mensaje sin contenido]'))
+
 def whatsapp_dashboard(request):
     """Main dashboard view for WhatsApp messages"""
     contacts = WhatsAppContact.objects.all().order_by('-last_interaction')
@@ -56,10 +70,10 @@ def webhook_receive_message(request):
         )
         
         # Update contact name if provided and different
-        if data.get('name') and data.get('name') != contact.name:
+        if data.get('name') and not contact.name:
             contact.name = data.get('name')
             contact.save()
-        
+
         # Parse timestamp
         try:
             if isinstance(data.get('timestamp'), str):
@@ -74,7 +88,7 @@ def webhook_receive_message(request):
         if message_id:
             message, created = WhatsAppMessage.objects.get_or_create(
                 contact=contact,
-                content=data['content'],
+                content=process_message_content(data),
                 timestamp=timestamp,
                 defaults={
                     'is_incoming': data.get('is_incoming', True),
@@ -84,7 +98,7 @@ def webhook_receive_message(request):
         else:
             message = WhatsAppMessage.objects.create(
                 contact=contact,
-                content=data['content'],
+                content=process_message_content(data),
                 timestamp=timestamp,
                 is_incoming=data.get('is_incoming', True),
                 media_url=data.get('media_url', '')

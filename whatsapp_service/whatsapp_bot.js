@@ -162,21 +162,28 @@ class WhatsAppBot {
     async handleMessage(msg, phoneNumber = null, contactName = null) {
         try {
             const messageContent = this.extractMessageContent(msg);
+            const isLocationMessage = typeof messageContent === 'object' && messageContent.type === 'location';
             const senderNumber = phoneNumber || msg.key.remoteJid?.replace('@s.whatsapp.net', '');
             const isIncoming = !msg.key.fromMe;
             
-            if (!messageContent || !senderNumber) return;
+            if ((!messageContent && !isLocationMessage) || !senderNumber) return;
 
-            console.log(`${isIncoming ? '📨' : '📤'} Message ${isIncoming ? 'from' : 'to'} ${senderNumber}: ${messageContent.substring(0, 50)}...`);
-
+            const displayContent = isLocationMessage ? '[Location Shared]' : messageContent;
+            console.log(`${isIncoming ? '📨' : '📤'} Message ${isIncoming ? 'from' : 'to'} ${senderNumber}: ${displayContent.substring(0, 50)}...`);
+            
             // Send to Django webhook
             const messageData = {
                 from: senderNumber,
-                content: messageContent,
+                content: isLocationMessage ? '' : messageContent,
                 timestamp: new Date(msg.messageTimestamp * 1000).toISOString(),
                 message_id: msg.key.id,
                 name: contactName || msg.pushName || '',
-                is_incoming: isIncoming
+                is_incoming: isIncoming,
+                ...(isLocationMessage && {
+                    type: 'location',
+                    latitude: messageContent.latitude,
+                    longitude: messageContent.longitude
+                })
             };
 
             await this.sendToDjango(WEBHOOK_RECEIVE_URL, messageData);
@@ -215,6 +222,14 @@ class WhatsAppBot {
         }
         if (msg.message?.documentMessage) {
             return '[Document]';
+        }
+        if (msg.message?.locationMessage) {
+            return {
+                content: '',
+                type: 'location',
+                latitude: msg.message.locationMessage.degreesLatitude,
+                longitude: msg.message.locationMessage.degreesLongitude
+            };
         }
         return null;
     }
