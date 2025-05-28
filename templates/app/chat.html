@@ -11,6 +11,7 @@
         .chat-container {
             height: 100vh;
             overflow: hidden;
+            overflow-y: auto;
         }
 
         .chat-header {
@@ -272,32 +273,63 @@
         .list-inside {
             list-style-position: inside;
         }
+
+        #messageInput {
+            min-height: 38px;
+            max-height: 120px;
+            line-height: 1.4;
+            transition: height 0.1s ease;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                height: auto;
+                min-height: 100vh;
+            }
+            
+            .chat-messages {
+                height: auto;
+                min-height: 400px;
+                max-height: 60vh;
+            }
+            
+            .client-form-column {
+                position: relative;
+                width: 100%;
+                margin-top: 1rem;
+            }
+            
+            .mobile-form-toggle {
+                display: none;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-form-toggle {
+                display: none;
+            }
+        }
     </style>
 </head>
-
 <body>
     <div class="container-fluid chat-container">
-
         <div class="row">
-            <div class="col">
+            <div class="col" style="padding: 0;">
                 <!-- Chat Header -->
                 <div class="chat-header d-flex align-items-center">
                     <button class="btn btn-link text-white me-3 p-0" onclick="goBack()">
                         <i class="fas fa-arrow-left fa-lg"></i>
                     </button>
-
                     <div class="avatar me-3">
                         <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center"
                             style="width: 50px; height: 50px;">
                             <i class="fas fa-user text-white"></i>
                         </div>
                     </div>
-
                     <div class="contact-info flex-grow-1">
                         <h5 class="mb-0">{{ contact.name|default:contact.phone_number }}</h5>
                         <small class="text-white-50">{{ contact.phone_number }}</small>
                     </div>
-
                 </div>
 
                 <!-- Chat Messages -->
@@ -365,10 +397,8 @@
                 <div class="chat-input">
                     <!-- Chat Input -->
                     <div class="input-group">
-                        <button class="btn btn-outline-secondary" type="button">
-                            <i class="fas fa-paperclip"></i>
-                        </button>
-                        <input type="text" class="form-control" id="messageInput" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+                        <textarea class="form-control overflow-auto"  id="messageInput" placeholder="Escribe un mensaje..." onkeypress="handleKeyPress(event)" rows="1" style="resize: none; overflow: hidden;"></textarea>
+                        
                         <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#copyModal">
                             <i class="fas fa-clipboard"></i>
                         </button>
@@ -380,11 +410,15 @@
                         </button>
                     </div>
                 </div>
+                <!-- Mobile Form Toggle Button -->
+                <button class="btn btn-primary mobile-form-toggle" onclick="toggleClientForm()">
+                    <i class="fas fa-user-plus"></i>
+                </button>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 client-form-column" id="clientFormColumn">
                 <div class="card h-100">
                     <div class="card-header">
-                        <h6><i class="fas fa-user-plus me-2"></i>Client Information</h6>
+                        <h6><i class="fas fa-user-plus me-2"></i>Información del cliente</h6>
                     </div>
                     <div class="card-body overflow-auto" style="max-height: 700px;">
                         <form id="clientDataForm">
@@ -421,11 +455,8 @@
                     </div>
                 </div>
             </div>
-
         </div>
-
     </div>
-
 
     <div class="modal fade" id="copyModal" tabindex="-1" aria-labelledby="copyModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -859,6 +890,43 @@
                 setTimeout(() => {
                     copyFeedback.classList.remove('show');
                 }, 1500);
+            }
+        });
+
+        function autoExpandTextarea() {
+            const textarea = document.getElementById('messageInput');
+            const chatMessages = document.querySelector('.chat-messages');
+            
+            textarea.style.height = 'auto';
+            const newHeight = Math.min(textarea.scrollHeight, 120);
+            textarea.style.height = newHeight + 'px';
+            
+            // Adjust chat messages height
+            const extraHeight = newHeight - 38;
+            chatMessages.style.height = `calc(100vh - ${200 + extraHeight}px)`;
+        }
+
+        // Add event listener when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.getElementById('messageInput');
+            textarea.addEventListener('input', autoExpandTextarea);
+        });
+
+        function toggleClientForm() {
+            const formColumn = document.getElementById('clientFormColumn');
+            formColumn.classList.toggle('show');
+        }
+
+        // Close form when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const formColumn = document.getElementById('clientFormColumn');
+            const toggleBtn = document.querySelector('.mobile-form-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                formColumn.classList.contains('show') && 
+                !formColumn.contains(event.target) && 
+                !toggleBtn.contains(event.target)) {
+                formColumn.classList.remove('show');
             }
         });
     </script>

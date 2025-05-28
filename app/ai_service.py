@@ -18,7 +18,7 @@ class WhatsAppAIService:
             logger.error(f"Failed to initialize Gemini AI: {str(e)}")
             raise
     
-    def generate_response(self, contact_id, max_messages=10):
+    def generate_response(self, contact_id, max_messages=50):
         """
         Generate an AI response based on conversation history for a specific contact
         Each conversation is isolated - no cross-conversation contamination
@@ -41,6 +41,7 @@ class WhatsAppAIService:
             messages = WhatsAppMessage.objects.filter(
                 contact=contact
             ).order_by('-timestamp')[:max_messages]
+
             
             logger.info(f"Found {len(messages)} messages for contact {contact_id}")
             
@@ -102,103 +103,100 @@ class WhatsAppAIService:
         This ensures the AI follows IZZI sales process and guidelines
         """
         contact_name = contact.name or contact.phone_number
+        personality_type = self.detect_personality_type(conversation_history)
         
+        try:
+            aida_stage = self.detect_aida_stage(conversation_history)
+        except AttributeError:
+            aida_stage = 'Interest'  # Default fallback
+            print("detect_aida_stage method not found, using fallback")
+
+        conversation_summary = self.build_conversation_summary(conversation_history)
+        print(f"================Available methods--------: {dir(self)}")
+
+        personality_styles = {
+            'D': {
+                'style': 'Directo, enfocado en resultados, sin rodeos',
+                'example': '"Este paquete es el más potente. Te da el mejor internet sin rodeos."'
+            },
+            'I': {
+                'style': 'Amigable, social, usa emojis ocasionales',
+                'example': '"¡Perfecto para ver series y compartir con toda la familia! 😄📶"'
+            },
+            'S': {
+                'style': 'Tranquilizador, enfocado en confiabilidad',
+                'example': '"Servicio confiable, sin interrupciones y soporte 24/7 incluido."'
+            },
+            'C': {
+                'style': 'Detallado, lógico, con información técnica',
+                'example': '"Te explico las especificaciones técnicas de cada paquete para que elijas el mejor."'
+            }
+        }
+
         prompt = f"""
-            ## Instrucciones Chatbot Ventas IZZI
+            ## Instrucciones Chatbot Ventas IZZI - FRAMEWORK AIDA + PERSONALIDAD
 
             ### Identidad
-            - Eres un asesor de internet amigable y conversacional llamado Sebastian Mauricio.
-            - Tu objetivo es vender servicios IZZI por WhatsApp de forma natural y efectiva.
+            - Eres Sebastian Mauricio, asesor de IZZI especialista en ventas por WhatsApp
+            - Combinas framework AIDA + personalidad del cliente + proceso de venta estructurado
 
-            ### Estilo de comunicación
-            - Mensajes cortos (1-3 oraciones máximo).
-            - Tono casual y humano, nunca robótico.
-            - Usa 1-2 emojis ocasionales (no en cada mensaje).
-            - Evita listas, viñetas o formatos complejos.
+            ### ANÁLISIS DEL CLIENTE:
+            - **Personalidad:** {personality_type} | **Etapa AIDA:** {aida_stage}
+            - **Estilo:** {personality_styles[personality_type]['style']}
 
-            ### Paquetes principales
+            ### FRAMEWORK AIDA POR PERSONALIDAD:
+            **ATENCIÓN:** D="¿Buscas el mejor internet? Oferta directa." | I="¡Hola! 😊 ¿Internet para toda la familia?" | S="¿Problemas con tu internet? Solución confiable." | C="¿Más velocidad? Paquetes técnicamente superiores."
+
+            ### Paquetes IZZI (mantener precios exactos)
             - **2P (6 meses promoción):** 
-                60MB (+80MB adicionales) Precio de lista $389, promoción de 3 meses $349
-                80MB (+100MB adicionales) Precio de lista $510, promoción de 3 meses $419
-                100MB (+150MB adicionales) Precio de lista $540, promoción de 3 meses $439
-                150MB (+200MB adicionales) Precio de lista $610, promoción de 3 meses $509
-                200MB (+500MB adicionales) Precio de lista $670, promoción de 3 meses $569
-                500MB (+1000MB adicionales) Precio de lista $790, promoción de 3 meses $689
-                1000MB Precio de lista $990, promoción de 3 meses $889
+            60MB (+80MB adicionales) Precio de lista $389, promoción de 3 meses $349
+            80MB (+100MB adicionales) Precio de lista $510, promoción de 3 meses $419
+            100MB (+150MB adicionales) Precio de lista $540, promoción de 3 meses $439
+            150MB (+200MB adicionales) Precio de lista $610, promoción de 3 meses $509
+            200MB (+500MB adicionales) Precio de lista $670, promoción de 3 meses $569
+            500MB (+1000MB adicionales) Precio de lista $790, promoción de 3 meses $689
+            1000MB Precio de lista $990, promoción de 3 meses $889
 
             - **3P (6 meses promoción):** 
-                60MB (+80MB adicionales) Precio de lista $539, promoción de 6 meses $499
-                80MB (+100MB adicionales) Precio de lista $690, promoción de 6 meses $599
-                100MB (+150MB adicionales) Precio de lista $720, promoción de 6 meses $619
-                150MB (+200MB adicionales) Precio de lista $790, promoción de 6 meses $689
-                200MB (+500MB adicionales) Precio de lista $850, promoción de 6 meses $749
-                500MB (+1000MB adicionales) Precio de lista $970, promoción de 6 meses $869
-                1000MB Precio de lista $1,170, promoción de 6 meses $1,069
+            60MB (+80MB adicionales) Precio de lista $539, promoción de 6 meses $499
+            80MB (+100MB adicionales) Precio de lista $690, promoción de 6 meses $599
+            100MB (+150MB adicionales) Precio de lista $720, promoción de 6 meses $619
+            150MB (+200MB adicionales) Precio de lista $790, promoción de 6 meses $689
+            200MB (+500MB adicionales) Precio de lista $850, promoción de 6 meses $749
+            500MB (+1000MB adicionales) Precio de lista $970, promoción de 6 meses $869
+            1000MB Precio de lista $1,170, promoción de 6 meses $1,069
 
-            ### Promociones importantes
-            - Instalación GRATIS
-            - MAX gratis por 12 meses (activar primeros 3 meses)
-            - Apple TV+ incluido
-            - VIX Premium incluido
-            - Domizzilia: $50 descuento mensual de por vida
-            - Portabilidad disponible
-            - Sin plazos forzosos disponible (seguro de exención)
+            ### Proceso de venta OBLIGATORIO:
+            1. Saluda según personalidad {personality_type} y pregunta servicio actual
+            2. **SOLICITA UBICACIÓN EXACTA:** "Presiona clip (📎) → 'Ubicación' para compartir ubicación actual"
+            3. Al recibir ubicación: confirma y agradece
+            4. **PREGUNTAS NECESIDADES:** dispositivos, uso, personas, presupuesto, servicios adicionales
+            5. **RECOMIENDA PAQUETE** específico con precio exacto
+            6. **Si acepta:** Solicita documentación:
+            "Para continuar necesito:
+            👤 Nombre completo titular
+            🏠 Comprobante domicilio  
+            🪪 INE (frente y reverso)
+            📱 Teléfono titular
+            📞 Teléfono referido
+            📧 Correo electrónico"
 
+            ### Promociones: Instalación GRATIS, MAX 12 meses, Apple TV+, VIX Premium, Domizzilia -$50/mes, Portabilidad, Sin plazos. TV+ $299, Móvil +$79.
             ### Adicional
             - Izzi TV+ $299 (200 canales) con Sky Sports incluido
             - Promoción con Móvil $79 Extra
 
-            ### Proceso de venta
-            1. Saluda de forma casual y pregunta si actualmente tiene algún servicio de internet contratado.
-            2. Si responde, DEBES solicitar su ubicación EXACTA usando el mapa de WhatsApp:
-            - Pídele específicamente que comparta su ubicación en tiempo real usando la función de mapa de WhatsApp
-            - Explica que esto es necesario para verificar la cobertura con precisión
-            - Dile cómo compartir su ubicación: "Por favor, presiona el clip (📎) y selecciona 'Ubicación' para compartir tu ubicación actual"
-            3. Cuando recibas un mensaje que dice [UBICACIÓN COMPARTIDA], confirma que has recibido la ubicación y agradece al usuario por compartirla.
-            4. DESPUÉS de recibir la ubicación, DEBES hacer más preguntas para entender sus necesidades:
-            - ¿Cuántos dispositivos conectarán al internet?
-            - ¿Qué tipo de uso le darán? (streaming, videollamadas, juegos, trabajo desde casa, etc.)
-            - ¿Cuántas personas usarán el servicio?
-            - ¿Tienen un presupuesto específico en mente?
-            - ¿Les interesa algún servicio adicional como TV o streaming?
-            5. Basado en toda esta información, recomienda el paquete más adecuado con su precio específico y beneficios.
-            6. IMPORTANTE: Cuando el cliente acepte un paquete específico y esté listo para proceder, NO solicites documentación.
-            En su lugar, envía el siguiente mensaje EXACTO y luego termina la conversación:
-            "¡Perfecto! Déjame verificar la cobertura exacta en tu zona. Dame un momento mientras confirmo la disponibilidad del servicio... ⏳"
+            **Resumen:** {chr(10).join(conversation_summary) if conversation_summary else "Primera conversación"}
+            **Recientes:** {chr(10).join(conversation_history[-10:]) if conversation_history else "Inicio"}
 
-            ### REGLA CRÍTICA PARA TERMINAR LA CONVERSACIÓN
-            - NUNCA pidas INE, comprobante de domicilio o información personal
-            - Cuando el cliente acepte un paquete específico, ÚNICAMENTE envía el mensaje sobre verificar cobertura
-            - NO continúes la conversación después de enviar ese mensaje
-            - NO pidas documentación
-            - NO hables sobre códigos de verificación
-            - NO expliques siguientes pasos o procesos
+            ### INSTRUCCIONES:
+            - Responde como {personality_type} en etapa {aida_stage}
+            - Sigue proceso de venta paso a paso
+            - Si cliente compartió ubicación (Google Maps link), reconócelo y continúa con preguntas de necesidades
+            - Máximo 2-3 oraciones
+            - {personality_type}='I' usa 1 emoji ocasional
 
-            ### Restricciones
-            - No ofrecer servicios fuera de paquetes oficiales
-            - SIEMPRE verificar cobertura mediante la ubicación exacta del mapa de WhatsApp
-            - No aceptar solo nombres de colonias o calles, INSISTIR en la ubicación por mapa
-            - No compartir precios incorrectos
-            - No crear promociones no autorizadas
-            - NUNCA solicitar documentación personal (INE, comprobante de domicilio)
-            - DETENER la conversación después del mensaje de verificación de cobertura
-
-            CONTEXTO DEL CLIENTE:
-            - Cliente: {contact_name}
-            - Teléfono: {contact.phone_number}
-            - Esta es una conversación de WhatsApp Business
-
-            HISTORIAL DE CONVERSACIÓN (SOLO ESTE CLIENTE):
-            {chr(10).join(conversation_history) if conversation_history else "Sin mensajes previos"}
-
-            INSTRUCCIONES FINALES:
-            1. Responde como Sebastian Mauricio siguiendo exactamente el proceso de venta IZZI
-            2. Mantén el tono casual y conversacional apropiado para WhatsApp
-            3. Sigue la secuencia: saludo → servicio actual → ubicación → necesidades → recomendación → cierre
-            4. Si el cliente acepta un paquete, envía SOLO el mensaje de verificación de cobertura y no agregues nada más
-            5. NUNCA solicites documentación personal
-
-            Genera tu respuesta como Sebastian Mauricio ahora:
+            Respuesta Sebastian Mauricio:
             """
         
         return prompt
@@ -243,3 +241,78 @@ class WhatsAppAIService:
         Use build_izzi_prompt for IZZI-specific conversations
         """
         return self.build_izzi_prompt(contact, conversation_history)
+    
+    def build_conversation_summary(self, conversation_history):
+        """Build a summary of key conversation points"""
+        full_conversation = '\n'.join(conversation_history)
+        
+        summary_points = []
+        
+        # Check if client mentioned current internet service
+        if any('megacable' in msg.lower() or 'totalplay' in msg.lower() or 'telmex' in msg.lower() or 'izzi' in msg.lower() for msg in conversation_history):
+            summary_points.append("- Cliente ya mencionó su servicio actual de internet")
+        
+        # Check if location was shared
+        if any('ubicación compartida' in msg.lower() or 'google.com/maps' in msg.lower() for msg in conversation_history):
+            summary_points.append("- Cliente ya compartió su ubicación")
+        
+        # Check if package was selected
+        if any('3p' in msg.lower() or 'paquete' in msg.lower() or '$' in msg for msg in conversation_history):
+            summary_points.append("- Cliente ya mostró interés en un paquete específico")
+        
+        # Check if client provided personal data
+        if any('@' in msg and '.com' in msg for msg in conversation_history):
+            summary_points.append("- Cliente ya proporcionó información personal")
+        
+        return summary_points
+    
+    def detect_personality_type(self, conversation_history):
+        """Detect customer personality type based on conversation patterns"""
+        full_conversation = ' '.join(conversation_history).lower()
+        
+        # Dominant (D) - Direct, price-focused, short messages
+        dominant_indicators = ['precio', 'cuanto cuesta', 'rapido', 'ya', 'directo', 'mejor oferta']
+        dominant_score = sum(1 for indicator in dominant_indicators if indicator in full_conversation)
+        
+        # Influential (I) - Friendly, uses emojis, social language
+        influential_indicators = ['familia', 'amigos', 'compartir', 'genial', 'perfecto', 'gracias']
+        influential_score = sum(1 for indicator in influential_indicators if indicator in full_conversation)
+        emoji_count = full_conversation.count('😄') + full_conversation.count('👍') + full_conversation.count('😊')
+        influential_score += emoji_count
+        
+        # Steady (S) - Asks about reliability, service quality
+        steady_indicators = ['servicio', 'confiable', 'problemas', 'soporte', 'calidad', 'estable']
+        steady_score = sum(1 for indicator in steady_indicators if indicator in full_conversation)
+        
+        # Conscientious (C) - Technical questions, wants details
+        conscientious_indicators = ['mbps', 'velocidad', 'tecnico', 'especificaciones', 'comparacion', 'diferencia']
+        conscientious_score = sum(1 for indicator in conscientious_indicators if indicator in full_conversation)
+        
+        # Determine dominant personality
+        scores = {
+            'D': dominant_score,
+            'I': influential_score, 
+            'S': steady_score,
+            'C': conscientious_score
+        }
+        
+        return max(scores, key=scores.get) if max(scores.values()) > 0 else 'I'  # Default to Influential
+    
+def detect_aida_stage(self, conversation_history):
+    """Detect current AIDA stage based on conversation"""
+    full_conversation = ' '.join(conversation_history).lower()
+    
+    # Action - Client ready to proceed, gave info, or accepted package
+    if any(indicator in full_conversation for indicator in ['acepto', 'ok', 'si quiero', 'cuando vienen', 'cuanto tiempo']):
+        return 'Action'
+    
+    # Desire - Asking about specific packages, prices, or showing strong interest
+    if any(indicator in full_conversation for indicator in ['paquete', 'precio', 'cuanto cuesta', 'me interesa', '$']):
+        return 'Desire'
+    
+    # Interest - Engaged, asking questions, shared location
+    if any(indicator in full_conversation for indicator in ['ubicacion', 'cobertura', 'como funciona', 'que incluye']):
+        return 'Interest'
+    
+    # Attention - Just starting conversation
+    return 'Attention'
