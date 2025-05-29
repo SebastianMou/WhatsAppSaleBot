@@ -77,6 +77,10 @@ class WhatsAppAIService:
                 }
             
             if response.text:
+                print(f"\n🤖 AI RESPONSE PREVIEW:")
+                print(f"📤 Generated: {response.text[:100]}...")  # First 100 characters
+                print(f"📏 Length: {len(response.text)} characters")
+
                 return {
                     'success': True,
                     'response': response.text.strip(),
@@ -112,7 +116,14 @@ class WhatsAppAIService:
             print("detect_aida_stage method not found, using fallback")
 
         conversation_summary = self.build_conversation_summary(conversation_history)
-        print(f"================Available methods--------: {dir(self)}")
+
+        print(f"\n🔍 === AI ANALYSIS FOR {contact_name} ===")
+        print(f"📊 Personality Type: {personality_type}")
+        print(f"🎯 AIDA Stage: {aida_stage}")
+        print(f"📝 Conversation Summary: {conversation_summary}")
+        print(f"💬 Recent Messages: {conversation_history[-3:]}")  # Show last 3 messages
+        print(f"🔢 Total Messages: {len(conversation_history)}")
+        print("=" * 50)
 
         personality_styles = {
             'D': {
@@ -141,6 +152,7 @@ class WhatsAppAIService:
             - Combinas framework AIDA + personalidad del cliente + proceso de venta estructurado
 
             ### ANÁLISIS DEL CLIENTE:
+            - **Cliente:** {contact_name}
             - **Personalidad:** {personality_type} | **Etapa AIDA:** {aida_stage}
             - **Estilo:** {personality_styles[personality_type]['style']}
 
@@ -271,21 +283,44 @@ class WhatsAppAIService:
         full_conversation = ' '.join(conversation_history).lower()
         
         # Dominant (D) - Direct, price-focused, short messages
-        dominant_indicators = ['precio', 'cuanto cuesta', 'rapido', 'ya', 'directo', 'mejor oferta']
+        dominant_indicators = [
+            'precio', 'cuanto cuesta', 'rapido', 'ya', 'directo', 'mejor oferta',
+            'barato', 'más barato', 'no quiero', 'honestamente', 'nada más', 
+            'solo quiero', 'necesito', 'quiero ya', 'ahora mismo', 'sin rodeos',
+            'directo al grano', 'rápido', 'inmediato', 'decidido', 'listo'
+        ]
         dominant_score = sum(1 for indicator in dominant_indicators if indicator in full_conversation)
         
         # Influential (I) - Friendly, uses emojis, social language
-        influential_indicators = ['familia', 'amigos', 'compartir', 'genial', 'perfecto', 'gracias']
+        influential_indicators = [
+            'familia', 'amigos', 'compartir', 'genial', 'perfecto', 'gracias',
+            'excelente', 'increíble', 'fantástico', 'buenísimo', 'padre', 'chido',
+            'qué bueno', 'me gusta', 'suena bien', 'está padre', 'qué padre',
+            'social', 'todos', 'juntos', 'hijos', 'esposa', 'pareja'
+        ]
         influential_score = sum(1 for indicator in influential_indicators if indicator in full_conversation)
-        emoji_count = full_conversation.count('😄') + full_conversation.count('👍') + full_conversation.count('😊')
+        emoji_count = (full_conversation.count('😄') + full_conversation.count('👍') + 
+               full_conversation.count('😊') + full_conversation.count('😁') + 
+               full_conversation.count('🤗') + full_conversation.count('👌') +
+               full_conversation.count('💪') + full_conversation.count('🎉'))
         influential_score += emoji_count
         
         # Steady (S) - Asks about reliability, service quality
-        steady_indicators = ['servicio', 'confiable', 'problemas', 'soporte', 'calidad', 'estable']
+        steady_indicators = [
+            'servicio', 'confiable', 'problemas', 'soporte', 'calidad', 'estable',
+            'seguro', 'garantía', 'respaldo', 'apoyo', 'ayuda', 'asistencia',
+            'funciona bien', 'sin problemas', 'constante', 'duradero', 'fijo',
+            'preocupa', 'dudas', 'seguridad', 'confianza', 'tranquilo'
+        ]
         steady_score = sum(1 for indicator in steady_indicators if indicator in full_conversation)
         
         # Conscientious (C) - Technical questions, wants details
-        conscientious_indicators = ['mbps', 'velocidad', 'tecnico', 'especificaciones', 'comparacion', 'diferencia']
+        conscientious_indicators = [
+            'mbps', 'velocidad', 'tecnico', 'especificaciones', 'comparacion', 'diferencia',
+            'detalles', 'información', 'datos', 'números', 'estadísticas', 'análisis',
+            'qué incluye', 'cómo funciona', 'explicación', 'documentación', 
+            'términos', 'condiciones', 'contrato', 'letra pequeña', 'opciones'
+        ]
         conscientious_score = sum(1 for indicator in conscientious_indicators if indicator in full_conversation)
         
         # Determine dominant personality
@@ -295,7 +330,16 @@ class WhatsAppAIService:
             'S': steady_score,
             'C': conscientious_score
         }
+
+        print(f"🧠 PERSONALITY SCORES:")
+        print(f"   D (Dominant): {dominant_score}")
+        print(f"   I (Influential): {influential_score}")  
+        print(f"   S (Steady): {steady_score}")
+        print(f"   C (Conscientious): {conscientious_score}")
         
+        detected_type = max(scores, key=scores.get) if max(scores.values()) > 0 else 'I'
+        print(f"   ✅ DETECTED: {detected_type}")
+
         return max(scores, key=scores.get) if max(scores.values()) > 0 else 'I'  # Default to Influential
     
 def detect_aida_stage(self, conversation_history):
