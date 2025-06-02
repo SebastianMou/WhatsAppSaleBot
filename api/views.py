@@ -3,6 +3,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from app.models import WhatsAppContact, WhatsAppMessage, ClientData
+
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import IsAuthenticated
+from app.models import WhatsAppSession
 from .serializers import (
     WhatsAppContactSerializer, 
     WhatsAppMessageSerializer,
@@ -55,9 +59,12 @@ def apiOverview(request):
 
 # Contact Views
 @api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def contact_list(request):
     if request.method == 'GET':
-        contacts = WhatsAppContact.objects.all()
+        # Filter by user's sessions
+        user_sessions = WhatsAppSession.objects.filter(user=request.user)
+        contacts = WhatsAppContact.objects.filter(session__in=user_sessions)
         serializer = WhatsAppContactSerializer(contacts, many=True)
         return Response(serializer.data)
     

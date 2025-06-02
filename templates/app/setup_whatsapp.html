@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurar WhatsApp - Conecta tu Cuenta</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 1200px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .whatsapp-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: #25D366;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .session-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #25D366;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+            margin: 20px 0;
+        }
+        
+        .qr-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .instructions-section {
+            flex: 1;
+            text-align: left;
+        }
+        
+        .qr-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            min-height: 350px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        
+        .qr-code {
+            max-width: 250px;
+            max-height: 250px;
+            border: 4px solid #25D366;
+            border-radius: 10px;
+            padding: 10px;
+            background: white;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #25D366;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status-message {
+            margin-top: 15px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .waiting { color: #007bff; }
+        
+        .instructions {
+            background: #e8f5e8;
+            border: 1px solid #25D366;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 0;
+            text-align: left;
+            height: fit-content;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .instructions-section {
+                text-align: center;
+            }
+            
+            .instructions {
+                text-align: left;
+            }
+        }
+        
+        .instructions h3 {
+            color: #25D366;
+            margin-top: 0;
+        }
+        
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 8px 0;
+            color: #333;
+        }
+        
+        .refresh-btn, .dashboard-btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .refresh-btn:hover, .dashboard-btn:hover {
+            background: #128C7E;
+            transform: translateY(-2px);
+        }
+        
+        .connected-info {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .phone-number {
+            font-size: 18px;
+            font-weight: bold;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="whatsapp-logo">📱</div>
+        <h1>Conectar WhatsApp</h1>
+        <p class="subtitle">Escanea el código QR con tu aplicación de WhatsApp Business</p>
+        
+        <div class="session-info">
+            <strong>Sesión:</strong> {{ session.session_name }}<br>
+            <strong>ID:</strong> {{ session.session_id }}
+        </div>
+        
+        <div class="main-content">
+            <div class="qr-section">
+                <div class="qr-container" id="qrContainer">
+                    <div class="loading" id="loadingSpinner"></div>
+                    <div class="status-message waiting" id="statusMessage">
+                        Generando Código QR...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="instructions-section">
+                <div class="instructions">
+                    <h3>📱 Cómo Conectar:</h3>
+                    <ol>
+                        <li>Abre <strong>WhatsApp Business</strong> en tu teléfono</li>
+                        <li>Toca <strong>Menú</strong> o <strong>Configuración</strong></li>
+                        <li>Selecciona <strong>Dispositivos Vinculados</strong></li>
+                        <li>Toca <strong>Vincular un Dispositivo</strong></li>
+                        <li>Apunta tu teléfono hacia esta pantalla para escanear el código QR</li>
+                    </ol>
+                    
+                    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px;">
+                        <h4 style="color: #856404; margin-top: 0;">⚠️ Importante:</h4>
+                        <ul style="margin: 10px 0; color: #856404;">
+                            <li>Usa <strong>WhatsApp Business</strong>, no WhatsApp normal</li>
+                            <li>El código QR expira después de unos minutos</li>
+                            <li>Si no funciona, presiona "Actualizar Código QR"</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <button class="refresh-btn" onclick="initializeQR()">🔄 Actualizar Código QR</button>
+        <button class="dashboard-btn" onclick="window.location.href='{% url 'dashboard' %}'">📊 Ir al Panel</button>
+    </div>
+
+    <script>
+        let qrCheckInterval;
+        let statusCheckInterval;
+        
+        function initializeQR() {
+            console.log('🔍 Initializing QR code...');
+            
+            // Reset UI
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('statusMessage').textContent = 'Generando Código QR...';
+            document.getElementById('statusMessage').className = 'status-message waiting';
+            
+            // Clear existing QR if any
+            const existingQR = document.getElementById('qrImage');
+            if (existingQR) {
+                existingQR.remove();
+            }
+            
+            // Clear intervals
+            if (qrCheckInterval) clearInterval(qrCheckInterval);
+            if (statusCheckInterval) clearInterval(statusCheckInterval);
+            
+            // Start QR generation
+            fetch(`/get-qr-code/{{ session.session_id }}/`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('📱 QR Response:', data);
+                handleQRResponse(data);
+            })
+            .catch(error => {
+                console.error('❌ QR Error:', error);
+                showError('Error al generar código QR. Por favor intenta de nuevo.');
+            });
+        }
+        
+        function handleQRResponse(data) {
+            const container = document.getElementById('qrContainer');
+            const loading = document.getElementById('loadingSpinner');
+            const message = document.getElementById('statusMessage');
+            
+            if (data.success) {
+                if (data.connected) {
+                    // Already connected
+                    loading.style.display = 'none';
+                    message.textContent = `✅ ¡Conectado! Teléfono: ${data.phone_number}`;
+                    message.className = 'status-message success';
+                    
+                    // Show connected info
+                    showConnectedStatus(data.phone_number);
+                    
+                } else if (data.qr_code) {
+                    // Display QR code
+                    loading.style.display = 'none';
+                    message.textContent = 'Escanea este código QR con WhatsApp Business';
+                    message.className = 'status-message waiting';
+                    
+                    // Create and display QR image
+                    const qrImg = document.createElement('img');
+                    qrImg.id = 'qrImage';
+                    qrImg.className = 'qr-code';
+                    qrImg.src = data.qr_code; // Base64 data URL
+                    qrImg.alt = 'Código QR de WhatsApp';
+                    
+                    // Insert QR image before the message
+                    container.insertBefore(qrImg, message);
+                    
+                    // Start checking for connection status
+                    startStatusCheck();
+                    
+                } else if (data.waiting) {
+                    // Still waiting for QR
+                    message.textContent = data.message || 'Esperando código QR...';
+                    message.className = 'status-message waiting';
+                    
+                    // Retry after 3 seconds
+                    setTimeout(() => {
+                        console.log('🔄 Retrying QR generation...');
+                        checkForQR();
+                    }, 3000);
+                }
+            } else {
+                // Error occurred
+                showError(data.error || 'Error desconocido');
+            }
+        }
+        
+        function checkForQR() {
+            fetch(`/get-qr-code/{{ session.session_id }}/`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('🔍 QR Check Response:', data);
+                handleQRResponse(data);
+            })
+            .catch(error => {
+                console.error('❌ QR Check Error:', error);
+            });
+        }
+        
+        function startStatusCheck() {
+            console.log('🔍 Starting status check...');
+            statusCheckInterval = setInterval(() => {
+                fetch(`/check-whatsapp-status/{{ session.session_id }}/`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('📊 Status Check:', data);
+                    if (data.success && data.connected) {
+                        // Connection successful!
+                        clearInterval(statusCheckInterval);
+                        
+                        const loading = document.getElementById('loadingSpinner');
+                        const message = document.getElementById('statusMessage');
+                        const qrImg = document.getElementById('qrImage');
+                        
+                        loading.style.display = 'none';
+                        if (qrImg) qrImg.style.display = 'none';
+                        
+                        message.textContent = `✅ ¡Conectado Exitosamente! Teléfono: ${data.phone_number}`;
+                        message.className = 'status-message success';
+                        
+                        showConnectedStatus(data.phone_number);
+                        
+                        // Redirect to dashboard after 3 seconds
+                        setTimeout(() => {
+                            window.location.href = '{% url "dashboard" %}';
+                        }, 3000);
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Status Check Error:', error);
+                });
+            }, 5000); // Check every 5 seconds
+        }
+        
+        function showConnectedStatus(phoneNumber) {
+            const container = document.getElementById('qrContainer');
+            const connectedDiv = document.createElement('div');
+            connectedDiv.className = 'connected-info';
+            connectedDiv.innerHTML = `
+                <h3 style="color: #155724; margin-top: 0;">🎉 WhatsApp Connected!</h3>
+                <div class="phone-number">📞 ${phoneNumber}</div>
+                <p style="margin-bottom: 0; color: #155724;">
+                    Your WhatsApp Business is now connected and ready to receive messages.
+                </p>
+            `;
+            
+            // Replace QR container content
+            container.innerHTML = '';
+            container.appendChild(connectedDiv);
+        }
+        
+        function showError(errorMessage) {
+            const loading = document.getElementById('loadingSpinner');
+            const message = document.getElementById('statusMessage');
+            
+            loading.style.display = 'none';
+            message.textContent = `❌ Error: ${errorMessage}`;
+            message.className = 'status-message error';
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Auto-start QR generation when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Page loaded, initializing QR...');
+            initializeQR();
+        });
+        
+        // Cleanup intervals when page unloads
+        window.addEventListener('beforeunload', function() {
+            if (qrCheckInterval) clearInterval(qrCheckInterval);
+            if (statusCheckInterval) clearInterval(statusCheckInterval);
+        });
+    </script>
+</body>
+</html>

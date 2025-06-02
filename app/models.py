@@ -1,21 +1,35 @@
 from django.db import models
+from django.contrib.auth.models import User
 
-# Create your models here.
-class WhatsAppContact(models.Model):
-    phone_number = models.CharField(max_length=20, unique=True)
-    name = models.CharField(max_length=100, blank=True)
-    last_interaction = models.DateTimeField(auto_now=True)
+class WhatsAppSession(models.Model):
+    session_id = models.CharField(max_length=50, unique=True)  # Remove null=True
+    session_name = models.CharField(max_length=100)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='whatsapp_sessions')  # Remove null=True
+    phone_number = models.CharField(max_length=20, blank=True, default='')  # Remove null=True, add default
+    is_active = models.BooleanField(default=False)  # Remove null=True
+    created_at = models.DateTimeField(auto_now_add=True)  # Remove null=True
     
     def __str__(self):
-        return f"{self.name or 'Unknown'} ({self.phone_number})"
+        return f"{self.session_name} ({self.user.username})"
 
+class WhatsAppContact(models.Model):
+    phone_number = models.CharField(max_length=20)
+    name = models.CharField(max_length=100, blank=True, default='')  # Add default
+    last_interaction = models.DateTimeField(auto_now=True)
+    session = models.ForeignKey(WhatsAppSession, on_delete=models.CASCADE, related_name='contacts')
+    
+    class Meta:
+        unique_together = ['phone_number', 'session']
+    
+    def __str__(self):
+        return f"{self.name or 'Unknown'} ({self.phone_number}) - {self.session.session_name}"
 
 class WhatsAppMessage(models.Model):
-    contact = models.ForeignKey(WhatsAppContact, on_delete=models.CASCADE, related_name='messages')
-    content = models.TextField()
-    timestamp = models.DateTimeField()
-    is_incoming = models.BooleanField()  # True if received, False if sent
-    media_url = models.URLField(blank=True, null=True)  # For media messages
+    contact = models.ForeignKey(WhatsAppContact, on_delete=models.CASCADE, related_name='messages')  # Remove null=True
+    content = models.TextField(default='')  # Remove null=True, add default
+    timestamp = models.DateTimeField()  # Remove null=True
+    is_incoming = models.BooleanField(default=True)  # Remove null=True, add default
+    media_url = models.URLField(blank=True, default='')  # Remove null=True, add default
     
     class Meta:
         ordering = ['timestamp']

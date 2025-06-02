@@ -65,7 +65,7 @@ class WhatsAppAIService:
             # Generate response using NEW Gemini API
             try:
                 response = self.client.models.generate_content(
-                    model="gemini-2.0-flash-exp",  # Updated model name
+                    model="gemini-2.0-flash",
                     contents=[prompt]
                 )
                 logger.info("Successfully generated AI response")
@@ -156,6 +156,11 @@ class WhatsAppAIService:
             - **Personalidad:** {personality_type} | **Etapa AIDA:** {aida_stage}
             - **Estilo:** {personality_styles[personality_type]['style']}
 
+            ### 🎯 DETECCIÓN INTELIGENTE DE INTENCIÓN:
+            **ANALIZA si el cliente es:**
+            - **PRECIO-ENFOCADO**: Busca "barato", "económico", "presupuesto bajo", o pregunta directamente precios SIN mencionar necesidades específicas
+            - **CONSULTIVO**: Pregunta "qué me recomienda", menciona familia/dispositivos/necesidades específicas
+            
             ### FRAMEWORK AIDA POR PERSONALIDAD:
             **ATENCIÓN:** D="¿Buscas el mejor internet? Oferta directa." | I="¡Hola! 😊 ¿Internet para toda la familia?" | S="¿Problemas con tu internet? Solución confiable." | C="¿Más velocidad? Paquetes técnicamente superiores."
 
@@ -177,8 +182,15 @@ class WhatsAppAIService:
             200MB (+500MB adicionales) Precio de lista $850, promoción de 6 meses $749
             500MB (+1000MB adicionales) Precio de lista $970, promoción de 6 meses $869
             1000MB Precio de lista $1,170, promoción de 6 meses $1,069
+            
+            **SI CLIENTE ES PRECIO-ENFOCADO:**
+            1. Saluda según personalidad {personality_type}
+            2. **OFRECE INMEDIATAMENTE**: "El más económico es 60MB (+80MB adicionales) por $349 los primeros 3 meses, perfecto para WhatsApp y redes sociales"
+            3. Solicita ubicación: "Presiona clip (📎) → 'Ubicación' para compartir ubicación actual"
+            4. Si acepta → Solicita documentación directamente
+            5. **NO hagas muchas preguntas** - ya decidió que quiere lo barato
 
-            ### Proceso de venta OBLIGATORIO:
+            **SI CLIENTE ES CONSULTIVO (Normal):**
             1. Saluda según personalidad {personality_type} y pregunta servicio actual
             2. **SOLICITA UBICACIÓN EXACTA:** "Presiona clip (📎) → 'Ubicación' para compartir ubicación actual"
             3. Al recibir ubicación: confirma y agradece
@@ -192,6 +204,11 @@ class WhatsAppAIService:
             📱 Teléfono titular
             📞 Teléfono referido
             📧 Correo electrónico"
+
+            ### 💰 PAQUETE MÁS ECONÓMICO (Para precio-enfocados):
+            **60MB (+80MB adicionales)** - $349 por 3 meses (precio regular $389)
+            - Perfecto para WhatsApp, redes sociales, navegación básica
+            - Instalación GRATIS incluida
 
             ### Promociones: Instalación GRATIS, MAX 12 meses, Apple TV+, VIX Premium, Domizzilia -$50/mes, Portabilidad, Sin plazos. TV+ $299, Móvil +$79.
             ### Adicional
